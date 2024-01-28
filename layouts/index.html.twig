@@ -1,0 +1,180 @@
+{# fetches photos in "static/photos", sorted by date #}
+{% set files = site.static|filter(f => f.path matches '/^photos/')|sort((a, b) => a.exif.DateTimeOriginal|default(a.date)|date('U') <=> b.exif.DateTimeOriginal|default(b.date)|date('U')) %}
+{# reverses sort if necessary #}
+{% if site.photo.sort == 'desc'|default('asc') %}{%- set files = files|reverse %}{% endif %}
+{# uses the first photo for Open Graph image #}
+{% set image = files|first.path %}
+{# creates first asset for preload #}
+{% set image_asset = asset(image)|resize(site.photo.size.thumbnail|default(640)) %}
+
+{% extends '_default/page.html.twig' %}
+
+    {%- block head -%}
+    {{ parent() }}
+    <link rel="preload" as="image" href="{{ url(image_asset|webp) }}" imagesrcset="{{ image_srcset(image_asset|webp) }}" imagesizes="{{ image_sizes('default') }}">
+    <style>{{ asset(site.photoswipe.core.css, {remote_fallback: 'photoswipe/photoswipe.css'})|inline }}</style>
+    <style>{{ asset(site.photoswipe.caption.css, {remote_fallback: 'photoswipe/photoswipe-dynamic-caption-plugin.css'})|inline }}</style>
+    {%- endblock head -%}
+
+      {%- block css -%}
+      {{ parent() }}
+      div#gallery {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      div#gallery::after {
+        content: '';
+        flex-grow: 999999999;
+      }
+      #gallery h1.title {
+        position: fixed;
+        z-index: 1;
+        margin: 0.5rem;
+        font-size: x-large;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      #gallery h1.title a {
+        text-decoration: none;
+      }
+      #gallery h1.title a:hover {
+        -webkit-font-smoothing: auto;
+        -moz-osx-font-smoothing: auto;
+      }
+      #gallery div.photo {
+        flex-grow: 1;
+        position: relative;
+        margin: $margin;
+        height: $height;
+        background-color: $background;
+      }
+      #gallery img {
+        object-fit: cover;
+        height: $height;
+        width: 100%;
+        max-width: 100%;
+        min-width: 100%;
+        vertical-align: bottom;
+        animation: fadeIn 500ms ease-in-out;
+      }
+      #gallery img:hover {
+        cursor: zoom-in;
+        filter: brightness(115%);
+        transition: filter .25s ease-out;
+      }
+      #gallery div.caption {
+        position: absolute;
+        bottom: 0px;
+        left: 0px;
+        padding: .2rem 0 .1rem .25rem;
+        width: 100%;
+        font-size: small;
+        font-style: italic;
+        line-height: normal;
+        background-color: $background;
+        opacity: .4;
+      }
+      #gallery div.caption:hover {
+        background-color: $background;
+        opacity: 1;
+        transition: opacity .5s ease-out;
+      }
+      #gallery div.caption a {
+        text-decoration: none;
+      }
+      #gallery div.caption span.author {
+        font-style: normal;
+      }
+      .pswp {
+        --pswp-bg: {{ site.photo.style.color.background }};
+      }
+      .pswp__dynamic-caption,
+      .pswp__dynamic-caption a {
+        color: {{ site.photo.style.color.text }};
+      }
+      {%- endblock css -%}
+
+      {%- block content ~%}
+      <div id="gallery">
+        <h1 class="title"><a href="{{ url(site.home) }}" title="{{ site.description|default(site.title) }}">{{ site.title }}</a></h1>
+        {%- for file in files ~%}
+          {%- if site.data.photos[file.basename] is defined ~%}
+            {%- set photo_data = site.data.photos[file.basename] -%}
+          {%- endif ~%}
+          {%- set photo = asset(file.path)|resize(site.photo.size.thumbnail|default(640)) -%}
+          {%- set photo_full = asset(file.path)|resize(site.photo.size.full|default(1920)) ~%}
+          {%- if site.photo.placeholder ?? false == false ~%}
+        <div class="photo">
+          {%- elseif site.photo.placeholder ?? false == 'image' ~%}
+        <div class="photo" style="background-image:url({{ photo|lqip }});background-repeat:no-repeat;background-position:center;background-size:cover;">
+          {%- elseif site.photo.placeholder ?? false == 'color' ~%}
+        <div class="photo" style="background-color:{{ photo|dominant_color }}">
+          {%- endif ~%}
+          {%- set attributes = {alt: photo_data.alt|default(photo_data.title|default), decoding: 'async'} -%}
+          {%- if loop.index > 10 %}{% set attributes = attributes|merge({loading: 'lazy'}) %}{% endif ~%}
+          <a href="{{ url(photo_full) }}" data-pswp-width="{{ photo_full.width }}" data-pswp-height="{{ photo_full.height }}" aria-label="{{ "Click to view this photo in full size"|trans }}">
+            {{ photo|html(attributes) }}
+          </a>
+          {%- if photo_data.title is defined or photo_data.author.name is defined ~%}
+          <div class="caption">
+            {%- if photo_data.title is defined ~%}
+            <em>{{ photo_data.title }}</em>
+            {%- endif ~%}
+            {%- if photo_data.title is defined and photo_data.author.name is defined %} &middot; {% endif ~%}
+            {%- if photo_data.author.name is defined ~%}
+            {%- set author -%}
+              {%- if photo_data.author.url is defined -%}
+                <a href="{{ photo_data.author.url }}" title="{% trans %}Author's page{% endtrans %}">{{ photo_data.author.name }}</a>
+              {%- else -%}
+                {{ photo_data.author.name }}
+              {%- endif -%}
+            {%- endset ~%}
+            <span class="author">{%- trans %}Credit: %author%{% endtrans ~%}</span>
+            {%- endif ~%}
+          </div>
+          {%- endif ~%}
+        </div>
+        {%- set photo_data = '' -%}
+        {%- endfor ~%}
+      </div>
+      <script type="module">
+        {%- apply minify_js -%}
+        import PhotoSwipeLightbox from '{{ asset(site.photoswipe.lightbox.js, {remote_fallback: 'photoswipe/photoswipe-lightbox.esm.js'}) }}';
+        import PhotoSwipeDynamicCaption from '{{ asset(site.photoswipe.caption.js, {remote_fallback: 'photoswipe/photoswipe-dynamic-caption-plugin.esm.js'}) }}';
+        const lightbox = new PhotoSwipeLightbox({
+          gallery: '#gallery',
+          children: '.photo',
+          bgOpacity: 1.0,
+          imageClickAction: 'close',
+          tapAction: 'close',
+          pswpModule: () => import('{{ asset(site.photoswipe.core.js, {remote_fallback: 'photoswipe/photoswipe.esm.js'}) }}'),
+          errorMsg: '{% trans -%}The photo cannot be loaded{%- endtrans %}',
+        });
+        const captionPlugin = new PhotoSwipeDynamicCaption(lightbox, {
+          captionContent: '.caption',
+        });
+        lightbox.on('uiRegister', function() {
+          lightbox.pswp.ui.registerElement({
+            name: 'download-button',
+            order: 8,
+            isButton: true,
+            tagName: 'a',
+            html: {
+              isCustomSVG: true,
+              inner: '<path d="M20.5 14.3 17.1 18V10h-2.2v7.9l-3.4-3.6L10 16l6 6.1 6-6.1ZM23 23H9v2h14Z" id="pswp__icn-download"/>',
+              outlineID: 'pswp__icn-download'
+            },
+            onInit: (el, pswp) => {
+              el.setAttribute('download', '');
+              el.setAttribute('target', '_blank');
+              el.setAttribute('rel', 'noopener');
+              pswp.on('change', () => {
+                el.href = pswp.currSlide.data.src;
+              });
+            }
+          });
+        });
+        lightbox.init();
+        {%- endapply -%}
+      </script>
+      {%- endblock content ~%}

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="{{ site.language }}">
+  <head>
+    {%- block head ~%}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    {%- include 'partials/metatags.html.twig' ~%}
+    <style>
+      {%- apply scss_to_css|minify_css -%}
+      {%- block css -%}
+      $background: {{ site.photo.style.color.background }};
+      $color: {{ site.photo.style.color.text }};
+      $height: {{ site.photo.style.img.height }};
+      $margin: {{ site.photo.style.img.margin }};
+      body {
+        font: 16px/24px -apple-system, Roboto, Helvetica, Arial, sans-serif;
+        background: $background;
+        color: $color;
+        margin: $margin;
+      }
+      a {
+        color: $color;
+      }
+      footer {
+        display: flex;
+        margin: 0.5rem;
+        align-items: center;
+        justify-content: space-between;
+      }
+      article#notfound {
+        margin: 2rem;
+        text-align: center;
+        font-size: x-large;
+      }
+      {%- endblock css -%}
+      {%- endapply -%}
+    </style>
+    {%- endblock head ~%}
+  </head>
+  <body>
+    <main>
+      {%- block content ~%}
+      {{ page.content }}
+      {%- endblock content ~%}
+    </main>
+    <footer>
+      {%- if site.author.name|default -%}
+        {%- set author -%}
+        {{ site.author.name }}
+        {%- endset -%}
+      {%- endif -%}
+      {%- if site.author.name|default and site.author.url|default -%}
+        {%- set author -%}
+        <a href="{{ url(site.author.url) }}">{{ site.author.name }}</a>
+        {%- endset -%}
+      {%- endif -%}
+      {%- set powered_by -%}
+      <a href="{{ cecil.url }}">Cecil</a> <a href="https://photo-stream.cecil.app">Photo Stream</a>
+      {%- endset ~%}
+      {% if author|default %}<div>{% trans %}Photos from %author%{% endtrans %}</div> {% endif %}<div>{% trans %}Powered by %powered_by%{% endtrans ~%}</div>
+    </footer>
+  </body>
+</html>

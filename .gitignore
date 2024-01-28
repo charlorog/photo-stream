@@ -1,0 +1,4 @@
+_site/
+.cecil/
+.cache/
+vendor/

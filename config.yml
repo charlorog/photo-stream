@@ -1,0 +1,56 @@
+title: "Photo Stream demo"
+description: "Super simple photo stream, powered by Unsplash & Cecil."
+baseurl: https://photo-stream-demo.cecil.app/
+author:
+  name: Unsplash
+  url: https://unsplash.com/s/photos/open-source
+
+photo:
+  style:
+    color:
+      background: "black"
+      text: "white"
+    img:
+      height: 300px
+      margin: 2px
+  sort: asc
+  size:
+    thumbnail: 640
+    full: 1920
+  placeholder: image # image, color or false
+
+photoswipe:
+  core:
+    js: https://raw.githubusercontent.com/dimsemenov/PhotoSwipe/master/dist/photoswipe.esm.js
+    css: https://raw.githubusercontent.com/dimsemenov/PhotoSwipe/master/dist/photoswipe.css
+  lightbox:
+    js: https://raw.githubusercontent.com/dimsemenov/PhotoSwipe/master/dist/photoswipe-lightbox.esm.js
+  caption:
+    js: https://raw.githubusercontent.com/dimsemenov/photoswipe-dynamic-caption-plugin/main/photoswipe-dynamic-caption-plugin.esm.js
+    css: https://raw.githubusercontent.com/dimsemenov/photoswipe-dynamic-caption-plugin/main/photoswipe-dynamic-caption-plugin.css
+
+pages:
+  default:
+    sitemap:
+      published: false
+    xsl/atom:
+      published: false
+    xsl/rss:
+      published: false
+static:
+  load: true
+metatags:
+  jsonld:
+    enabled: true
+assets:
+  images:
+    optimize:
+      enabled: true
+    quality: 75
+    responsive:
+      enabled: true
+    webp:
+      enabled: true
+output:
+  pagetypeformats:
+    homepage: html
